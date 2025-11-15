@@ -1,6 +1,6 @@
 
 // FIX: Import `React` to resolve the 'Cannot find namespace React' error.
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 function useLocalStorage<T,>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -13,20 +13,26 @@ function useLocalStorage<T,>(key: string, initialValue: T): [T, React.Dispatch<R
     }
   });
 
-  const setValue = (value: T | ((val: T) => T)) => {
+  const setValue: React.Dispatch<React.SetStateAction<T>> = useCallback((value) => {
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      setStoredValue(currentStoredValue => {
+        const valueToStore = value instanceof Function ? value(currentStoredValue) : value;
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        return valueToStore;
+      });
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [key]);
   
   useEffect(() => {
       const handleStorageChange = (e: StorageEvent) => {
           if (e.key === key && e.newValue) {
-              setStoredValue(JSON.parse(e.newValue));
+              try {
+                setStoredValue(JSON.parse(e.newValue));
+              } catch (error) {
+                console.error("Error parsing storage value on change:", error);
+              }
           }
       };
       window.addEventListener('storage', handleStorageChange);
