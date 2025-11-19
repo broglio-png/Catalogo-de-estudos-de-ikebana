@@ -1,16 +1,19 @@
+
 import React, { useState, useCallback } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { CatalogedWork, Tab } from './types';
 import Gallery from './components/Gallery';
 import AddStudyModal from './components/AddStudyModal';
-import { GalleryIcon, CatalogIcon, DashboardIcon, PlusIcon } from './components/Icons';
+import { GalleryIcon, CatalogIcon, DashboardIcon, PlusIcon, BookOpenIcon } from './components/Icons';
 import Dashboard from './components/Dashboard';
 import StudyCatalogView from './components/StudyCatalogView';
+import { generateIkebanaBooklet } from './utils/pdfGenerator';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('gallery');
     const [works, setWorks] = useLocalStorage<CatalogedWork[]>('ikebana-works', []);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     const handleSaveWork = useCallback((newWork: CatalogedWork) => {
         setWorks(prevWorks => [...prevWorks, newWork]);
@@ -24,6 +27,25 @@ const App: React.FC = () => {
     const handleDeleteWork = useCallback((workId: string) => {
         setWorks(prevWorks => prevWorks.filter(w => w.id !== workId));
     }, [setWorks]);
+
+    const handleGenerateBooklet = async () => {
+        if (works.length === 0) {
+            alert("Adicione estudos ao seu catálogo primeiro!");
+            return;
+        }
+        setIsGeneratingPdf(true);
+        // Allow UI to update before freezing for PDF gen
+        setTimeout(() => {
+            try {
+                generateIkebanaBooklet(works);
+            } catch (e) {
+                console.error("Erro ao gerar PDF", e);
+                alert("Ocorreu um erro ao gerar o livrinho.");
+            } finally {
+                setIsGeneratingPdf(false);
+            }
+        }, 100);
+    };
 
 
     const renderContent = () => {
@@ -54,8 +76,19 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark text-on-surface-light dark:text-on-surface-dark flex flex-col font-sans">
             <header className="sticky top-0 z-10 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-sm shadow-sm">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-center items-center">
-                    <h1 className="text-2xl font-serif font-bold text-on-surface-light dark:text-on-surface-dark">Ikebana Studio</h1>
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-serif font-bold text-on-surface-light dark:text-on-surface-dark">Ikebana Studio</h1>
+                    </div>
+                    <button 
+                        onClick={handleGenerateBooklet} 
+                        disabled={isGeneratingPdf}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary dark:text-primary-light bg-primary/10 dark:bg-primary-dark/30 rounded-full hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        title="Gerar Meu Livrinho de Ikebana em PDF"
+                    >
+                        <BookOpenIcon className="w-5 h-5" />
+                        <span className="hidden sm:inline">{isGeneratingPdf ? 'Gerando...' : 'Meu Livrinho'}</span>
+                    </button>
                 </div>
             </header>
 
