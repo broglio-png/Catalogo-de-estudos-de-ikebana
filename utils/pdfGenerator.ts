@@ -1,7 +1,7 @@
 
 import { jsPDF } from "jspdf";
 import { CatalogedWork } from "../types";
-import { IKEBANA_CURRICULUM, GRADUATIONS } from "../constants";
+import { IKEBANA_CURRICULUM } from "../constants";
 
 export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
   const doc = new jsPDF({
@@ -16,10 +16,7 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
   const SUBTEXT_COLOR = [100, 100, 100] as [number, number, number];
 
   // Helper: Sanitize Text (Remove Kanji inside parens because standard fonts break)
-  // Example: "Expressão (Shasseitai) (斜生体)" -> "Expressão (Shasseitai)"
   const cleanText = (text: string) => {
-    // Split by '(' and take the parts that look latin-ish or keep just the first part
-    // Simple heuristic: Take the Portuguese part which is usually first.
     const parts = text.split('(');
     if (parts.length > 0) return parts[0].trim();
     return text;
@@ -36,7 +33,6 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
   doc.setFont("times", "bold");
   doc.setFontSize(40);
   
-  // Title centered
   doc.text("Meu Livrinho", 105, 100, { align: "center" });
   doc.text("de Ikebana", 105, 120, { align: "center" });
 
@@ -59,14 +55,10 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
   // 2. CONTENT PAGES
   // -----------------------------
   
-  // Organize Pages according to curriculum order
   let pageNumber = 1;
-
-  // Filter works: Find the single "best" work for each curriculum item that has entries
   const worksToPrint: { studyId: number; work: CatalogedWork }[] = [];
 
   IKEBANA_CURRICULUM.forEach(study => {
-    // Find all works for this study ID
     const matchingWorks = works.filter(w => w.curriculumId === study.id);
     
     if (matchingWorks.length > 0) {
@@ -95,7 +87,7 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
     
     // Header: Graduation
     doc.setFillColor(245, 245, 245);
-    doc.rect(0, 0, 210, 30, 'F'); // Header bg
+    doc.rect(0, 0, 210, 30, 'F');
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
@@ -106,17 +98,14 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
     doc.setFont("times", "bold");
     doc.setFontSize(24);
     doc.setTextColor(...TEXT_COLOR);
-    // Clean text to avoid garbage chars for Japanese
-    const studyTitle = cleanText(study.study);
     
-    // Handle long titles
+    const studyTitle = cleanText(study.study);
     const splitTitle = doc.splitTextToSize(studyTitle, 170);
     doc.text(splitTitle, 20, 50);
 
-    const titleHeight = splitTitle.length * 10; // approx height
+    const titleHeight = splitTitle.length * 10;
 
     // Image
-    // Max area: 170mm width, ~150mm height
     const imgProps = doc.getImageProperties(work.imageDataUrl);
     const availableWidth = 170;
     const availableHeight = 150;
@@ -130,7 +119,7 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
       finalW = finalH * imgRatio;
     }
 
-    const xPos = (210 - finalW) / 2; // Center horizontally
+    const xPos = (210 - finalW) / 2; 
     const yPos = 60 + titleHeight;
 
     doc.addImage(work.imageDataUrl, 'JPEG', xPos, yPos, finalW, finalH);
@@ -147,7 +136,6 @@ export const generateIkebanaBooklet = (works: CatalogedWork[]) => {
     
     let currentMetaY = metaY + 10;
     
-    // Custom Title (if exists and different from study name)
     if (work.customTitle && work.customTitle !== studyTitle) {
         doc.text(`Título: ${work.customTitle}`, 20, currentMetaY);
         currentMetaY += 6;

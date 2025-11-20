@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { CatalogedWork } from '../types';
 import { IKEBANA_CURRICULUM } from '../constants';
@@ -48,36 +49,56 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
         img.onload = () => {
             const canvasWidth = 800;
             const canvasHeight = 1100;
-            const padding = 50;
+            const padding = 60;
             const contentWidth = canvasWidth - (padding * 2);
 
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
 
-            // Background
-            ctx.fillStyle = 'rgb(94, 45, 145)';
+            // Background: White/Light
+            ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
             
-            // Image
+            // Image logic
             const imgMaxHeight = 600;
             const imgAspectRatio = img.width / img.height;
             let dWidth = contentWidth;
             let dHeight = dWidth / imgAspectRatio;
+            
+            // Ensure image fits decently
             if (dHeight > imgMaxHeight) {
                 dHeight = imgMaxHeight;
                 dWidth = dHeight * imgAspectRatio;
             }
+            
             const dx = (canvasWidth - dWidth) / 2;
             const dy = padding;
-            ctx.drawImage(img, dx, dy, dWidth, dHeight);
 
-            // Text
+            // Optional: Drop shadow for the image to pop off the white background
+            ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 10;
+
+            ctx.drawImage(img, dx, dy, dWidth, dHeight);
+            
+            // Reset shadow for text
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
+            // TEXT SECTION
             let currentY = dy + dHeight + 60;
-            ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
 
-            // Title (Study)
+            // Clean Japanese chars for canvas (optional, but consistent with PDF logic if preferred, 
+            // but browser Canvas usually handles Kanji fine. We'll keep full text here for better context).
+            
+            // Title (Study): Primary Purple
+            ctx.fillStyle = 'rgb(94, 45, 145)'; // #5E2D91
             ctx.font = 'bold 36px Lora';
+            
             const words = study.study.split(' ');
             let line = '';
             for (const word of words) {
@@ -85,44 +106,47 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
                 if (ctx.measureText(testLine).width > contentWidth && line.length > 0) {
                     ctx.fillText(line, canvasWidth / 2, currentY);
                     line = word + ' ';
-                    currentY += 42; 
+                    currentY += 45; 
                 } else {
                     line = testLine;
                 }
             }
             ctx.fillText(line.trim(), canvasWidth / 2, currentY);
-            currentY += 25;
+            currentY += 30;
 
-            // Subtitle (Graduation)
-            ctx.font = '20px Inter';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillText(study.graduation, canvasWidth / 2, currentY);
-            currentY += 50;
+            // Subtitle (Graduation): Dark Gray
+            ctx.font = '500 22px Inter';
+            ctx.fillStyle = '#6B7280'; // Gray-500
+            ctx.fillText(study.graduation.toUpperCase(), canvasWidth / 2, currentY);
+            currentY += 60;
 
             // Details
             ctx.textAlign = 'left';
-            const details = [
-                { label: 'Autor:', value: work.author },
-                { label: 'Data:', value: new Date(work.creationDate).toLocaleDateString() },
-                { label: 'Variedade:', value: work.variety },
-            ];
+            const detailsLeftX = padding + 40;
             
-            for (const detail of details) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            // Helper to draw detail row
+            const drawDetail = (label: string, value: string) => {
+                ctx.fillStyle = '#9CA3AF'; // Gray-400
                 ctx.font = '18px Inter';
-                ctx.fillText(detail.label, padding, currentY);
+                ctx.fillText(label, detailsLeftX, currentY);
                 
-                ctx.fillStyle = 'white';
+                ctx.fillStyle = '#1F2937'; // Gray-800
                 ctx.font = 'bold 18px Inter';
-                ctx.fillText(detail.value, padding + 120, currentY);
-                currentY += 30;
-            }
+                ctx.fillText(value, detailsLeftX + 100, currentY);
+                currentY += 35;
+            };
+
+            drawDetail('Autor:', work.author);
+            drawDetail('Data:', new Date(work.creationDate).toLocaleDateString());
+            drawDetail('Tipo:', work.variety);
             
             // Footer
-            ctx.font = '16px Inter';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.textAlign = 'center';
-            ctx.fillText('Gerado com Ikebana Studio', canvasWidth / 2, canvasHeight - padding + 20);
+            ctx.fillStyle = 'rgb(94, 45, 145)'; // Primary Purple again
+            ctx.globalAlpha = 0.6;
+            ctx.font = '16px Inter';
+            ctx.fillText('Gerado com Ikebana Studio', canvasWidth / 2, canvasHeight - 30);
+            ctx.globalAlpha = 1.0;
 
             // Download
             const link = document.createElement('a');
@@ -193,7 +217,7 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
                                     <button onClick={(e) => { e.stopPropagation(); toggleFavorite(selectedWork); setSelectedWork({...selectedWork, isFavorite: !selectedWork.isFavorite}); }} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 inline-flex items-center gap-2">
                                         <StarIcon className={`w-6 h-6 ${selectedWork.isFavorite ? 'text-yellow-400' : 'text-gray-500'}`} filled={selectedWork.isFavorite}/>
                                     </button>
-                                     <button onClick={() => generateShareableImage(selectedWork)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 inline-flex items-center gap-2">
+                                     <button onClick={() => generateShareableImage(selectedWork)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 inline-flex items-center gap-2" title="Compartilhar Imagem">
                                         <ShareIcon className="w-6 h-6 text-gray-500" />
                                     </button>
                                 </div>
