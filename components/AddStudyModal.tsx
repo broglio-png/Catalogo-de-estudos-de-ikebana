@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { CatalogedWork } from '../types';
 import { GRADUATIONS, IKEBANA_CURRICULUM } from '../constants';
@@ -16,6 +17,7 @@ const AddStudyModal: React.FC<AddStudyModalProps> = ({ onClose, onSave }) => {
   const [customTitle, setCustomTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [variety, setVariety] = useState<'Moribana' | 'Nageire' | 'N/A'>('N/A');
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -24,6 +26,7 @@ const AddStudyModal: React.FC<AddStudyModalProps> = ({ onClose, onSave }) => {
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
         setImageDataUrl(reader.result as string);
+        setError(null);
       };
       reader.readAsDataURL(file);
     }
@@ -35,7 +38,7 @@ const AddStudyModal: React.FC<AddStudyModalProps> = ({ onClose, onSave }) => {
   
   const handleSave = () => {
     if (!imageDataUrl || !selectedStudyId || !author) {
-      alert('Por favor, preencha a imagem, o estudo e o autor.');
+      setError('Por favor, preencha a imagem, o estudo e o autor.');
       return;
     }
 
@@ -122,6 +125,13 @@ const AddStudyModal: React.FC<AddStudyModalProps> = ({ onClose, onSave }) => {
                 </div>
             </div>
         </div>
+        
+        {error && (
+            <div className="px-6 pb-2">
+                <p className="text-sm text-red-500 font-medium">{error}</p>
+            </div>
+        )}
+
         <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600">Cancelar</button>
             <button type="button" onClick={handleSave} className="px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md shadow-sm hover:bg-primary-dark">Salvar</button>

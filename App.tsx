@@ -28,16 +28,16 @@ const App: React.FC = () => {
         setWorks(prevWorks => prevWorks.filter(w => w.id !== workId));
     }, [setWorks]);
 
-    const handleGenerateBooklet = async () => {
+    const handleGenerateBooklet = () => {
         if (works.length === 0) {
             alert("Adicione estudos ao seu catálogo primeiro!");
             return;
         }
         setIsGeneratingPdf(true);
         // Allow UI to update before freezing for PDF gen
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
-                generateIkebanaBooklet(works);
+                await generateIkebanaBooklet(works);
             } catch (e) {
                 console.error("Erro ao gerar PDF", e);
                 alert("Ocorreu um erro ao gerar o livrinho.");
@@ -84,7 +84,7 @@ const App: React.FC = () => {
                         onClick={handleGenerateBooklet} 
                         disabled={isGeneratingPdf}
                         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary dark:text-primary-light bg-primary/10 dark:bg-primary-dark/30 rounded-full hover:bg-primary/20 transition-colors disabled:opacity-50"
-                        title="Gerar Meu Livrinho de Ikebana em PDF"
+                        title="Gerar Portfolio PDF"
                     >
                         <BookOpenIcon className="w-5 h-5" />
                         <span className="hidden sm:inline">{isGeneratingPdf ? 'Gerando...' : 'Meu Livrinho'}</span>
