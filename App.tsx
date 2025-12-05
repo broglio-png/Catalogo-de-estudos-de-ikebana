@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { CatalogedWork, Tab } from './types';
 import Gallery from './components/Gallery';
@@ -13,6 +13,23 @@ const App: React.FC = () => {
     const [works, setWorks] = useLocalStorage<CatalogedWork[]>('ikebana-works', []);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    
+    // Theme State
+    const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
+
+    // Theme Effect
+    useEffect(() => {
+        const root = window.document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    };
 
     const handleSaveWork = useCallback((newWork: CatalogedWork) => {
         setWorks(prevWorks => [...prevWorks, newWork]);
@@ -74,18 +91,31 @@ const App: React.FC = () => {
             {/* Header (apenas para ações globais, títulos ficam nas views) */}
             <header className="sticky top-0 z-20 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                          {/* Logo ou Nome do App Simples */}
                         <span className="font-serif font-bold text-xl tracking-tight text-primary dark:text-white">Ikebana Studio</span>
                     </div>
-                    <button 
-                        onClick={handleGenerateBooklet} 
-                        disabled={isGeneratingPdf}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary rounded-full hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
-                    >
-                        <span className="material-symbols-outlined text-lg">auto_stories</span>
-                        <span className="hidden sm:inline">{isGeneratingPdf ? 'Gerando...' : 'Meu Livrinho'}</span>
-                    </button>
+                    
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={toggleTheme}
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-surface-dark transition-colors"
+                            title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+                        >
+                            <span className="material-symbols-outlined">
+                                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                            </span>
+                        </button>
+
+                        <button 
+                            onClick={handleGenerateBooklet} 
+                            disabled={isGeneratingPdf}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary rounded-full hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
+                        >
+                            <span className="material-symbols-outlined text-lg">auto_stories</span>
+                            <span className="hidden sm:inline">{isGeneratingPdf ? 'Gerando...' : 'Meu Livrinho'}</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 

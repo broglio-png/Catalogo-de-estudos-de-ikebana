@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { CatalogedWork, CurriculumItem } from '../types';
 import { GRADUATIONS, IKEBANA_CURRICULUM } from '../constants';
@@ -88,7 +89,7 @@ const StudyCatalogView: React.FC<{ works: CatalogedWork[] }> = ({ works }) => {
                     {/* Conteúdo em Cascata */}
                     {isExpanded && (
                         <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
-                            {Object.entries(subGroups).map(([subGroup, studies]) => (
+                            {Object.entries(subGroups).map(([subGroup, studies]: [string, CurriculumItem[]]) => (
                                 <div key={subGroup} className="p-4 border-b border-gray-200 dark:border-gray-800 last:border-0">
                                     <h3 className="text-sm font-bold text-text-light dark:text-text-dark mb-3 pl-2 border-l-4 border-primary/50 uppercase tracking-wide">
                                         {subGroup}
