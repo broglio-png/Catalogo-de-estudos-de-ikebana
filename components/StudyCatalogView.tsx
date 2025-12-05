@@ -1,10 +1,39 @@
-import React, { useMemo } from 'react';
-import { CurriculumItem, CatalogedWork } from '../types';
+import React, { useMemo, useState } from 'react';
+import { CatalogedWork, CurriculumItem } from '../types';
 import { GRADUATIONS, IKEBANA_CURRICULUM } from '../constants';
 
 const StudyCatalogView: React.FC<{ works: CatalogedWork[] }> = ({ works }) => {
     const completedStudyIds = new Set(works.map(w => w.curriculumId));
+    
+    // Estado para controlar quais graduações estão expandidas
+    const [expandedGraduations, setExpandedGraduations] = useState<Record<string, boolean>>({
+        'Fundamental': true // Começa com o primeiro aberto
+    });
 
+    const toggleGraduation = (grad: string) => {
+        setExpandedGraduations(prev => ({
+            ...prev,
+            [grad]: !prev[grad]
+        }));
+    };
+
+    // Agrupamento dos dados: Graduação -> Subgrupo -> Estudos
+    const groupedCurriculum = useMemo(() => {
+        const structure: Record<string, Record<string, CurriculumItem[]>> = {};
+
+        IKEBANA_CURRICULUM.forEach(item => {
+            if (!structure[item.graduation]) {
+                structure[item.graduation] = {};
+            }
+            if (!structure[item.graduation][item.subGroup]) {
+                structure[item.graduation][item.subGroup] = [];
+            }
+            structure[item.graduation][item.subGroup].push(item);
+        });
+        return structure;
+    }, []);
+
+    // Cálculo de progresso
     const graduationProgress = useMemo(() => {
         const progress: { [key: string]: { completed: number, total: number } } = {};
         GRADUATIONS.forEach(grad => {
@@ -19,38 +48,74 @@ const StudyCatalogView: React.FC<{ works: CatalogedWork[] }> = ({ works }) => {
     }, [completedStudyIds]);
 
     return (
-        <div className="p-4 md:p-8 space-y-6">
-             <h1 className="text-3xl font-serif font-bold text-on-surface-light dark:text-on-surface-dark text-center">Catálogo</h1>
+        <div className="p-4 md:p-6 space-y-4 pb-28">
+             <header className="mb-6">
+                 <h1 className="text-2xl font-serif font-bold text-text-light dark:text-text-dark">Catálogo Curricular</h1>
+                 <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">Acompanhe seu progresso por níveis</p>
+             </header>
+
              {GRADUATIONS.map(graduation => {
                  const progress = graduationProgress[graduation];
-                 const percentage = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
+                 const percentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+                 const isExpanded = expandedGraduations[graduation];
+                 const subGroups = groupedCurriculum[graduation] || ({} as Record<string, CurriculumItem[]>);
 
                  return (
-                 <div key={graduation} className="bg-surface-light dark:bg-surface-dark p-6 rounded-lg shadow-md">
-                    <div className="mb-4">
-                        <h2 className="text-2xl font-serif font-semibold text-primary dark:text-primary-light mb-2">{graduation}</h2>
-                        <div className="flex items-center gap-4">
-                            <div className="flex-grow w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                                <div className="bg-primary h-1.5 rounded-full" style={{ width: `${percentage}%` }}></div>
+                 <div key={graduation} className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+                    {/* Header da Graduação (Clicável) */}
+                    <div 
+                        onClick={() => toggleGraduation(graduation)}
+                        className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    >
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-lg font-serif font-bold text-primary dark:text-white">{graduation}</h2>
+                            <span className="material-symbols-outlined text-text-secondary-light dark:text-text-secondary-dark transform transition-transform duration-300" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                expand_more
+                            </span>
+                        </div>
+                        
+                        <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-medium text-text-secondary-light dark:text-text-secondary-dark">
+                                <span>{percentage}% concluído</span>
+                                <span>{progress.completed}/{progress.total}</span>
                             </div>
-                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 w-16 text-right">{progress.completed} / {progress.total}</span>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                                <div className="bg-primary h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${percentage}%` }}></div>
+                            </div>
                         </div>
                     </div>
-                    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {IKEBANA_CURRICULUM.filter(item => item.graduation === graduation).map(item => (
-                            <li key={item.id} className="py-3 flex justify-between items-center">
-                                <p className="flex-1 pr-4 font-medium text-on-surface-light dark:text-on-surface-dark">{item.study}</p>
-                                {completedStudyIds.has(item.id) ? (
-                                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold text-sm">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                                        Completo
-                                    </span>
-                                ) : (
-                                    <span className="text-gray-400 dark:text-gray-500 text-sm">Pendente</span>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
+
+                    {/* Conteúdo em Cascata */}
+                    {isExpanded && (
+                        <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
+                            {Object.entries(subGroups).map(([subGroup, studies]) => (
+                                <div key={subGroup} className="p-4 border-b border-gray-200 dark:border-gray-800 last:border-0">
+                                    <h3 className="text-sm font-bold text-text-light dark:text-text-dark mb-3 pl-2 border-l-4 border-primary/50 uppercase tracking-wide">
+                                        {subGroup}
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        {studies.map(item => {
+                                            const isCompleted = completedStudyIds.has(item.id);
+                                            return (
+                                                <li key={item.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-white/5 transition-colors">
+                                                    <div className={`mt-0.5 shrink-0 ${isCompleted ? 'text-green-500' : 'text-gray-300 dark:text-gray-600'}`}>
+                                                        <span className="material-symbols-outlined text-xl">
+                                                            {isCompleted ? 'check_circle' : 'circle'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`text-sm font-medium leading-snug ${isCompleted ? 'text-text-light dark:text-text-dark' : 'text-text-secondary-light dark:text-text-secondary-dark'}`}>
+                                                            {item.study}
+                                                        </p>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                  </div>
                  );
              })}

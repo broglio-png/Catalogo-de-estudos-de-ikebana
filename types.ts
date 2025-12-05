@@ -2,8 +2,9 @@
 export interface CurriculumItem {
   id: number;
   graduation: string;
+  subGroup: string;
   study: string;
-  varietySuggestion: 'Moribana' | 'Nageire';
+  varietySuggestion: 'Moribana' | 'Nageire' | 'N/A';
 }
 
 export interface CatalogedWork {

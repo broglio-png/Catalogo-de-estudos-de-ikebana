@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { CatalogedWork } from '../types';
 import { IKEBANA_CURRICULUM } from '../constants';
-import { StarIcon, ShareIcon, XMarkIcon, GalleryIcon } from './Icons';
 
 interface GalleryProps {
     works: CatalogedWork[];
@@ -63,13 +62,12 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
 
-            // 1. Background: Clean White (Requested)
+            // 1. Background: Clean White
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
             
             // 2. Image Logic
-            // Max height for image allows space for text at bottom
-            const imgMaxHeight = 700; // Slightly reduced to make space for extra text
+            const imgMaxHeight = 700;
             const imgAspectRatio = img.width / img.height;
             let dWidth = contentWidth;
             let dHeight = dWidth / imgAspectRatio;
@@ -82,8 +80,8 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
             const dx = (canvasWidth - dWidth) / 2;
             const dy = padding + 20;
 
-            // Image Shadow for "Pop" effect
-            ctx.shadowColor = "rgba(94, 45, 145, 0.2)"; // Primary purple shadow
+            // Image Shadow
+            ctx.shadowColor = "rgba(94, 45, 145, 0.2)";
             ctx.shadowBlur = 30;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 15;
@@ -91,28 +89,24 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
             // Draw Image
             ctx.drawImage(img, dx, dy, dWidth, dHeight);
 
-            // Subtle Border around image
+            // Border
             ctx.shadowColor = "transparent";
             ctx.strokeStyle = '#F3F4F6';
             ctx.lineWidth = 2;
             ctx.strokeRect(dx, dy, dWidth, dHeight);
 
             // 3. Text Section
-            // All text uses Purple shades as requested ("letras em roxo")
-            
             let currentY = dy + dHeight + 60;
             ctx.textAlign = 'center';
 
-            // --- Parse Titles ---
+            // Parse Titles
             const fullString = study.study;
-            // Portuguese is usually before the first parenthesis
             const cleanStudyName = fullString.split('(')[0].trim();
-            // Japanese/Kanji are usually inside parentheses. We extract them.
             const matches = fullString.match(/\(([^)]+)\)/g);
             const japaneseText = matches ? matches.map(m => m.replace(/[()]/g, '')).join(' ') : '';
 
-            // Main Title (Study Name - Portuguese)
-            ctx.fillStyle = 'rgb(94, 45, 145)'; // #5E2D91 (Primary)
+            // Main Title
+            ctx.fillStyle = '#5E2D91';
             ctx.font = 'bold 42px Lora, serif';
             
             const words = cleanStudyName.split(' ');
@@ -130,10 +124,10 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
             ctx.fillText(line.trim(), canvasWidth / 2, currentY);
             currentY += 40;
 
-            // Japanese Subtitle (Kanji/Romaji)
+            // Japanese Subtitle
             if (japaneseText) {
-                ctx.fillStyle = '#8A4DBA'; // Medium Purple
-                ctx.font = '30px Lora, serif'; // Using serif for better Kanji rendering if available
+                ctx.fillStyle = '#8A4DBA';
+                ctx.font = '30px Lora, serif';
                 ctx.fillText(japaneseText, canvasWidth / 2, currentY);
                 currentY += 50;
             } else {
@@ -142,35 +136,31 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
 
             // Subtitle (Graduation)
             ctx.font = '500 24px Inter, sans-serif';
-            ctx.fillStyle = '#4A2472'; // Darker Purple
+            ctx.fillStyle = '#4A2472';
             ctx.fillText(study.graduation.toUpperCase(), canvasWidth / 2, currentY);
             currentY += 80;
 
             // Details Row
-            // Using purple for labels
             ctx.textAlign = 'left';
             const leftColX = padding + 80;
             const rightColX = canvasWidth / 2 + 40;
             const detailsY = currentY;
 
             ctx.font = '20px Inter, sans-serif';
-            ctx.fillStyle = '#B075D1'; // Light Purple Accent for Labels
+            ctx.fillStyle = '#B075D1';
             ctx.fillText('AUTOR', leftColX, detailsY);
             ctx.fillText('DATA', rightColX, detailsY);
 
-            // Values
             ctx.font = 'bold 24px Inter, sans-serif';
-            ctx.fillStyle = '#5E2D91'; // Primary Purple for Values
+            ctx.fillStyle = '#5E2D91';
             ctx.fillText(work.author, leftColX, detailsY + 30);
             ctx.fillText(new Date(work.creationDate).toLocaleDateString(), rightColX, detailsY + 30);
             
-            // Footer Branding
             ctx.textAlign = 'center';
             ctx.fillStyle = '#B075D1';
             ctx.font = '16px Inter, sans-serif';
             ctx.fillText('Ikebana Studio', canvasWidth / 2, canvasHeight - 40);
 
-            // Trigger Download
             const link = document.createElement('a');
             link.download = `ikebana_${cleanStudyName.slice(0, 10).trim()}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -179,100 +169,152 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
     };
 
     return (
-        <div className="p-4 md:p-8">
-            <h1 className="text-3xl font-serif font-bold text-on-surface-light dark:text-on-surface-dark mb-6 text-center">Galeria</h1>
-            
-            <div className="mb-6 flex flex-col md:flex-row gap-4">
-                <input 
-                    type="text" 
-                    placeholder="Buscar por título, autor, estudo..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full md:flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-surface-light dark:bg-surface-dark focus:ring-primary focus:border-primary text-on-surface-light dark:text-on-surface-dark"
-                />
-                 <button onClick={() => setShowFavorites(!showFavorites)} className={`p-2 rounded-md flex items-center justify-center gap-2 transition-colors ${showFavorites ? 'bg-yellow-400 text-white shadow' : 'bg-surface-light dark:bg-surface-dark text-on-surface-light dark:text-on-surface-dark'}`}>
-                    <StarIcon className="w-5 h-5" filled={showFavorites} />
-                    <span>Favoritos</span>
-                </button>
+        <div className="p-4 md:p-6 pb-28">
+            {/* Header */}
+            <div className="flex flex-col gap-4 mb-6 sticky top-0 bg-background-light dark:bg-background-dark z-10 py-2">
+                <h1 className="text-2xl font-serif font-bold text-text-light dark:text-text-dark pl-2">Galeria</h1>
+                
+                <div className="flex gap-3">
+                    <div className="flex-1 bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center px-4 py-2.5">
+                        <span className="material-symbols-outlined text-gray-400">search</span>
+                        <input 
+                            type="text" 
+                            placeholder="Buscar..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-transparent border-none focus:ring-0 text-text-light dark:text-text-dark placeholder-gray-400 ml-2"
+                        />
+                    </div>
+                     <button 
+                        onClick={() => setShowFavorites(!showFavorites)} 
+                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm ${showFavorites ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-400/30' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border border-gray-200 dark:border-gray-800'}`}
+                    >
+                        <span className={`material-symbols-outlined ${showFavorites ? 'filled' : ''}`}>star</span>
+                    </button>
+                </div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {/* Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {filteredWorks.map(work => (
-                    <div key={work.id} className="relative group aspect-square cursor-pointer" onClick={() => setSelectedWork(work)}>
-                        <img src={work.imageDataUrl} alt={work.customTitle} className="w-full h-full object-cover rounded-lg shadow-md transition-transform transform group-hover:scale-105"/>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent transition-opacity duration-300 flex items-end p-2 rounded-lg opacity-0 group-hover:opacity-100">
-                            <p className="text-white text-sm font-semibold truncate">{work.customTitle || IKEBANA_CURRICULUM.find(s=>s.id === work.curriculumId)?.study}</p>
+                    <div key={work.id} className="relative group aspect-square cursor-pointer rounded-xl overflow-hidden shadow-sm" onClick={() => setSelectedWork(work)}>
+                        <img src={work.imageDataUrl} alt={work.customTitle} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                            <p className="text-white text-xs font-bold line-clamp-1">{work.customTitle || IKEBANA_CURRICULUM.find(s=>s.id === work.curriculumId)?.study}</p>
+                            <p className="text-white/70 text-[10px]">{work.author}</p>
                         </div>
-                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(work); }} className="absolute top-2 right-2 p-1.5 bg-white/70 backdrop-blur-sm rounded-full text-gray-700 hover:text-yellow-500 transition-colors">
-                           <StarIcon className={`w-5 h-5 ${work.isFavorite ? 'text-yellow-400' : 'text-gray-500'}`} filled={work.isFavorite}/>
-                         </button>
+                         {work.isFavorite && (
+                            <div className="absolute top-2 right-2 text-yellow-400">
+                                <span className="material-symbols-outlined filled text-lg drop-shadow-md">star</span>
+                            </div>
+                         )}
                     </div>
                 ))}
             </div>
 
             {filteredWorks.length === 0 && (
-                 <div className="text-center py-20 text-gray-500 dark:text-gray-400">
-                    <GalleryIcon className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600"/>
-                    <p>Nenhum estudo encontrado.</p>
-                    <p className="text-sm">Adicione seu primeiro estudo no botão `+`!</p>
+                 <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                        <span className="material-symbols-outlined text-3xl text-gray-400">photo_library</span>
+                    </div>
+                    <p className="text-text-secondary-light dark:text-text-secondary-dark font-medium">Nenhum estudo encontrado.</p>
                 </div>
             )}
 
+            {/* Immersive Detail View */}
             {selectedWork && (
-                <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={() => setSelectedWork(null)}>
-                    <div className="bg-surface-light dark:bg-surface-dark rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <img src={selectedWork.imageDataUrl} alt={selectedWork.customTitle} className="w-full md:w-1/2 h-64 md:h-auto object-cover"/>
-                        <div className="p-6 flex flex-col flex-1">
-                           <div className="flex-grow overflow-y-auto pr-2">
-                               <h2 className="text-2xl font-serif font-bold text-on-surface-light dark:text-on-surface-dark">{selectedWork.customTitle || "Estudo"}</h2>
-                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">por {selectedWork.author} em {new Date(selectedWork.creationDate).toLocaleDateString()}</p>
-                               <div className="bg-primary/10 dark:bg-primary-dark/20 p-3 rounded-md mb-4">
-                                   <p className="text-primary dark:text-primary-light font-semibold text-sm">Estudo</p>
-                                   <p className="font-medium text-on-surface-light dark:text-on-surface-dark mt-1">{IKEBANA_CURRICULUM.find(s=>s.id === selectedWork.curriculumId)?.study}</p>
-                               </div>
-                               <div className="space-y-2 text-sm text-on-surface-light dark:text-on-surface-dark">
-                                   <p><strong>Variedade:</strong> {selectedWork.variety}</p>
-                               </div>
+                <div className="fixed inset-0 bg-background-light dark:bg-background-dark z-50 flex flex-col animate-fadeIn overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="flex items-center justify-between p-4 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md sticky top-0 z-10">
+                        <button onClick={() => setSelectedWork(null)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <span className="material-symbols-outlined text-text-light dark:text-text-dark">arrow_back</span>
+                        </button>
+                        <div className="flex gap-2">
+                             <button onClick={() => generateShareableImage(selectedWork)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-text-secondary-light dark:text-text-secondary-dark">
+                                <span className="material-symbols-outlined">ios_share</span>
+                            </button>
+                            <button onClick={() => toggleFavorite(selectedWork)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <span className={`material-symbols-outlined ${selectedWork.isFavorite ? 'text-yellow-400 filled' : 'text-text-secondary-light dark:text-text-secondary-dark'}`}>star</span>
+                            </button>
+                            <button onClick={() => setShowDeleteConfirm(true)} className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500">
+                                <span className="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto">
+                        <div className="w-full aspect-square md:aspect-video bg-black">
+                             <img src={selectedWork.imageDataUrl} className="w-full h-full object-contain mx-auto" alt="Detail" />
+                        </div>
+                        
+                        <div className="p-6 max-w-2xl mx-auto space-y-6">
+                            <div>
+                                <h1 className="text-2xl font-serif font-bold text-text-light dark:text-text-dark mb-1">{selectedWork.customTitle || "Estudo Sem Título"}</h1>
+                                <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    Adicionado em {new Date(selectedWork.creationDate).toLocaleDateString()}
+                                </p>
                             </div>
-                           <div className="mt-auto pt-6 flex justify-between items-center border-t border-gray-200 dark:border-gray-700">
+
+                            {/* Metadata Card */}
+                            <div className="bg-surface-light dark:bg-surface-dark rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
                                 <div>
-                                    <button onClick={(e) => { e.stopPropagation(); toggleFavorite(selectedWork); setSelectedWork({...selectedWork, isFavorite: !selectedWork.isFavorite}); }} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 inline-flex items-center gap-2">
-                                        <StarIcon className={`w-6 h-6 ${selectedWork.isFavorite ? 'text-yellow-400' : 'text-gray-500'}`} filled={selectedWork.isFavorite}/>
-                                    </button>
-                                     <button onClick={() => generateShareableImage(selectedWork)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 inline-flex items-center gap-2" title="Compartilhar Imagem">
-                                        <ShareIcon className="w-6 h-6 text-gray-500 dark:text-gray-300" />
-                                    </button>
+                                    <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Estudo Curricular</p>
+                                    <p className="text-base font-medium text-text-light dark:text-text-dark">
+                                        {IKEBANA_CURRICULUM.find(s=>s.id === selectedWork.curriculumId)?.study}
+                                    </p>
                                 </div>
-                                {showDeleteConfirm ? (
-                                    <div className="flex items-center gap-2 animate-fadeIn">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Tem certeza?</span>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); onDeleteWork(selectedWork.id); setSelectedWork(null); }} 
-                                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                                        >
-                                            Sim
-                                        </button>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }} 
-                                            className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                                        >
-                                            Não
-                                        </button>
+                                <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                        <p className="text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-1">Graduação</p>
+                                        <p className="text-sm text-text-light dark:text-text-dark">
+                                            {IKEBANA_CURRICULUM.find(s=>s.id === selectedWork.curriculumId)?.graduation}
+                                        </p>
                                     </div>
-                                ) : (
+                                    <div>
+                                        <p className="text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-1">Subgrupo</p>
+                                        <p className="text-sm text-text-light dark:text-text-dark">
+                                            {IKEBANA_CURRICULUM.find(s=>s.id === selectedWork.curriculumId)?.subGroup}
+                                        </p>
+                                    </div>
+                                </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                        <p className="text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-1">Variedade</p>
+                                        <p className="text-sm text-text-light dark:text-text-dark">{selectedWork.variety}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-1">Autor</p>
+                                        <p className="text-sm text-text-light dark:text-text-dark">{selectedWork.author}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Delete Confirmation Overlay */}
+                    {showDeleteConfirm && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+                            <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                                <h3 className="text-lg font-bold text-text-light dark:text-text-dark mb-2">Apagar Estudo?</h3>
+                                <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-6">Essa ação não pode ser desfeita.</p>
+                                <div className="flex gap-3">
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} 
-                                        className="text-red-500 hover:text-red-700 font-semibold px-3 py-1 text-sm transition-colors"
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gray-100 dark:bg-gray-800 text-text-light dark:text-text-dark"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        onClick={() => { onDeleteWork(selectedWork.id); setSelectedWork(null); }}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white"
                                     >
                                         Apagar
                                     </button>
-                                )}
-                           </div>
+                                </div>
+                            </div>
                         </div>
-                        <button onClick={() => setSelectedWork(null)} className="absolute top-4 right-4 p-1 rounded-full bg-black/20 text-white hover:bg-black/40">
-                            <XMarkIcon className="w-6 h-6"/>
-                        </button>
-                    </div>
+                    )}
                 </div>
             )}
         </div>

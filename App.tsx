@@ -4,7 +4,6 @@ import useLocalStorage from './hooks/useLocalStorage';
 import { CatalogedWork, Tab } from './types';
 import Gallery from './components/Gallery';
 import AddStudyModal from './components/AddStudyModal';
-import { GalleryIcon, CatalogIcon, DashboardIcon, PlusIcon, BookOpenIcon } from './components/Icons';
 import Dashboard from './components/Dashboard';
 import StudyCatalogView from './components/StudyCatalogView';
 import { generateIkebanaBooklet } from './utils/pdfGenerator';
@@ -34,7 +33,6 @@ const App: React.FC = () => {
             return;
         }
         setIsGeneratingPdf(true);
-        // Allow UI to update before freezing for PDF gen
         setTimeout(async () => {
             try {
                 await generateIkebanaBooklet(works);
@@ -46,7 +44,6 @@ const App: React.FC = () => {
             }
         }, 100);
     };
-
 
     const renderContent = () => {
         switch (activeTab) {
@@ -60,53 +57,60 @@ const App: React.FC = () => {
         }
     };
 
-    const NavButton: React.FC<{ tabName: Tab; icon: React.ReactNode; label: string }> = ({ tabName, icon, label }) => (
+    const NavButton: React.FC<{ tabName: Tab; icon: string; label: string }> = ({ tabName, icon, label }) => (
         <button
             onClick={() => setActiveTab(tabName)}
-            className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 group relative ${
-                activeTab === tabName ? 'text-primary dark:text-primary-light' : 'text-gray-500 dark:text-gray-400 hover:text-primary'
+            className={`flex flex-col items-center justify-center w-full h-full transition-all duration-200 ${
+                activeTab === tabName ? 'text-primary dark:text-white' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-primary dark:hover:text-white'
             }`}
         >
-            {icon}
-            <span className="text-xs font-medium">{label}</span>
-            <span className={`absolute bottom-0 h-0.5 w-1/2 bg-primary transition-transform duration-300 scale-x-0 ${activeTab === tabName ? 'scale-x-100' : 'group-hover:scale-x-50'}`}></span>
+            <span className={`material-symbols-outlined mb-1 ${activeTab === tabName ? 'filled' : ''}`}>{icon}</span>
+            <span className="text-[10px] font-medium tracking-wide">{label}</span>
         </button>
     );
 
     return (
-        <div className="min-h-screen bg-background-light dark:bg-background-dark text-on-surface-light dark:text-on-surface-dark flex flex-col font-sans">
-            <header className="sticky top-0 z-10 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-sm shadow-sm">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark flex flex-col font-sans transition-colors duration-300">
+            {/* Header (apenas para ações globais, títulos ficam nas views) */}
+            <header className="sticky top-0 z-20 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+                <div className="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-serif font-bold text-on-surface-light dark:text-on-surface-dark">Ikebana Studio</h1>
+                         {/* Logo ou Nome do App Simples */}
+                        <span className="font-serif font-bold text-xl tracking-tight text-primary dark:text-white">Ikebana Studio</span>
                     </div>
                     <button 
                         onClick={handleGenerateBooklet} 
                         disabled={isGeneratingPdf}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary dark:text-primary-light bg-primary/10 dark:bg-primary-dark/30 rounded-full hover:bg-primary/20 transition-colors disabled:opacity-50"
-                        title="Gerar Portfolio PDF"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary rounded-full hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
                     >
-                        <BookOpenIcon className="w-5 h-5" />
+                        <span className="material-symbols-outlined text-lg">auto_stories</span>
                         <span className="hidden sm:inline">{isGeneratingPdf ? 'Gerando...' : 'Meu Livrinho'}</span>
                     </button>
                 </div>
             </header>
 
-            <main className="flex-grow pb-24">
+            <main className="flex-grow w-full max-w-4xl mx-auto">
                 {renderContent()}
             </main>
 
             {isModalOpen && <AddStudyModal onClose={() => setIsModalOpen(false)} onSave={handleSaveWork} />}
             
-            <button onClick={() => setIsModalOpen(true)} className="fixed bottom-20 right-1/2 translate-x-1/2 z-20 w-14 h-14 bg-primary rounded-full text-white shadow-lg flex items-center justify-center hover:bg-primary-dark transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-offset-2 focus:ring-offset-surface-light dark:focus:ring-offset-surface-dark">
-                <PlusIcon className="w-7 h-7"/>
-            </button>
+            {/* FAB (Floating Action Button) */}
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30">
+                <button 
+                    onClick={() => setIsModalOpen(true)} 
+                    className="w-16 h-16 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+                >
+                    <span className="material-symbols-outlined text-3xl">add</span>
+                </button>
+            </div>
 
-            <footer className="fixed bottom-0 left-0 right-0 bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-700">
-                <div className="flex justify-around items-center h-16 max-w-4xl mx-auto px-2">
-                    <NavButton tabName="gallery" label="Galeria" icon={<GalleryIcon className="w-6 h-6" />} />
-                    <NavButton tabName="catalog" label="Catálogo" icon={<CatalogIcon className="w-6 h-6" />} />
-                    <NavButton tabName="dashboard" label="Progresso" icon={<DashboardIcon className="w-6 h-6" />} />
+            {/* Bottom Navigation */}
+            <footer className="fixed bottom-0 left-0 right-0 bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 z-20 pb-safe">
+                <div className="flex justify-around items-center h-20 max-w-4xl mx-auto">
+                    <NavButton tabName="gallery" label="Galeria" icon="photo_library" />
+                    <NavButton tabName="catalog" label="Catálogo" icon="import_contacts" />
+                    <NavButton tabName="dashboard" label="Progresso" icon="monitoring" />
                 </div>
             </footer>
         </div>
