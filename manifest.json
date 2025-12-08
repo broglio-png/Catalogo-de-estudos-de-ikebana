@@ -1,0 +1,23 @@
+{
+  "name": "Ikebana Studio",
+  "short_name": "Ikebana",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#19141e",
+  "theme_color": "#5d2c90",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://fonts.gstatic.com/s/i/materialicons/local_florist/v6/24px.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://fonts.gstatic.com/s/i/materialicons/local_florist/v6/24px.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

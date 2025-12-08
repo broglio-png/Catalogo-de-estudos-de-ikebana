@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { CatalogedWork, Tab } from './types';
@@ -17,13 +16,17 @@ const App: React.FC = () => {
     // Theme State
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
 
-    // Theme Effect
+    // Theme Effect: Updates class and PWA theme-color
     useEffect(() => {
         const root = window.document.documentElement;
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        
         if (theme === 'dark') {
             root.classList.add('dark');
+            if (metaThemeColor) metaThemeColor.setAttribute('content', '#19141e'); // background-dark
         } else {
             root.classList.remove('dark');
+            if (metaThemeColor) metaThemeColor.setAttribute('content', '#f7f6f8'); // background-light
         }
     }, [theme]);
 
