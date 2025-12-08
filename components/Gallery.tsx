@@ -68,17 +68,28 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
         setSelectedVarieties([]);
     };
 
+    // Helper para remover acentos e normalizar texto para busca
+    const normalizeText = (text: string) => {
+        return text
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+    };
+
     const filteredWorks = useMemo(() => {
         return works.filter(work => {
             const study = IKEBANA_CURRICULUM.find(s => s.id === work.curriculumId);
             if (!study) return false;
 
-            // Text Search
-            const searchLower = searchTerm.toLowerCase();
+            // Busca melhorada: Normaliza acentos e busca em múltiplos campos
+            const searchLower = normalizeText(searchTerm);
             const matchesSearch = 
-                work.customTitle.toLowerCase().includes(searchLower) ||
-                work.author.toLowerCase().includes(searchLower) ||
-                study.study.toLowerCase().includes(searchLower);
+                normalizeText(work.customTitle).includes(searchLower) ||
+                normalizeText(work.author).includes(searchLower) ||
+                normalizeText(work.variety).includes(searchLower) ||
+                normalizeText(study.study).includes(searchLower) ||
+                normalizeText(study.subGroup).includes(searchLower) ||
+                normalizeText(study.graduation).includes(searchLower);
             
             // Favorites
             const matchesFavorites = !showFavorites || work.isFavorite;
@@ -247,26 +258,34 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
                 </div>
                 
                 <div className="flex gap-3">
-                    <div className="flex-1 bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center px-4 py-2.5">
+                    <div className="flex-1 bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center px-4 py-2.5 group focus-within:ring-2 focus-within:ring-primary/20 transition-shadow">
                         <span className="material-symbols-outlined text-gray-400">search</span>
                         <input 
                             type="text" 
-                            placeholder="Buscar..."
+                            placeholder="Buscar por título, autor, estudo, subgrupo..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-transparent border-none focus:ring-0 text-text-light dark:text-text-dark placeholder-gray-400 ml-2"
+                            className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-text-light dark:text-text-dark placeholder-gray-400 ml-2"
                         />
+                         {searchTerm && (
+                            <button 
+                                onClick={() => setSearchTerm('')}
+                                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        )}
                     </div>
                      <button 
                         onClick={() => setIsFilterOpen(true)}
-                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm border ${activeFiltersCount > 0 ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border-gray-200 dark:border-gray-800'}`}
+                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm border ${activeFiltersCount > 0 ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                         title="Filtrar"
                     >
                         <span className="material-symbols-outlined">tune</span>
                     </button>
                      <button 
                         onClick={() => setShowFavorites(!showFavorites)} 
-                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm ${showFavorites ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-400/30 border border-yellow-400' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border border-gray-200 dark:border-gray-800'}`}
+                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm ${showFavorites ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-400/30 border border-yellow-400' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                         title="Favoritos"
                     >
                         <span className={`material-symbols-outlined ${showFavorites ? 'filled' : ''}`}>star</span>
