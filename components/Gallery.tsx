@@ -15,29 +15,94 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
     const [selectedWork, setSelectedWork] = useState<CatalogedWork | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+    // Filter States
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedGraduations, setSelectedGraduations] = useState<string[]>([]);
+    const [selectedSubGroups, setSelectedSubGroups] = useState<string[]>([]);
+    const [selectedStudyIds, setSelectedStudyIds] = useState<number[]>([]);
+    const [selectedVarieties, setSelectedVarieties] = useState<string[]>([]);
+
     useEffect(() => {
         if (selectedWork) {
             setShowDeleteConfirm(false);
         }
     }, [selectedWork]);
 
+    // Derive available options based on current works (Faceted Search)
+    const availableOptions = useMemo(() => {
+        const graduations = new Set<string>();
+        const subGroups = new Set<string>();
+        const varieties = new Set<string>();
+        const studiesMap = new Map<number, string>();
+
+        works.forEach(work => {
+            const study = IKEBANA_CURRICULUM.find(s => s.id === work.curriculumId);
+            if (study) {
+                graduations.add(study.graduation);
+                subGroups.add(study.subGroup);
+                studiesMap.set(study.id, study.study);
+            }
+            if (work.variety) varieties.add(work.variety);
+        });
+
+        return {
+            graduations: Array.from(graduations).sort(),
+            subGroups: Array.from(subGroups).sort(),
+            varieties: Array.from(varieties).sort(),
+            studies: Array.from(studiesMap.entries())
+                .map(([id, name]) => ({ id, name }))
+                .sort((a, b) => a.name.localeCompare(b.name))
+        };
+    }, [works]);
+
+    const activeFiltersCount = 
+        selectedGraduations.length + 
+        selectedSubGroups.length + 
+        selectedStudyIds.length + 
+        selectedVarieties.length;
+
+    const clearFilters = () => {
+        setSelectedGraduations([]);
+        setSelectedSubGroups([]);
+        setSelectedStudyIds([]);
+        setSelectedVarieties([]);
+    };
+
     const filteredWorks = useMemo(() => {
         return works.filter(work => {
             const study = IKEBANA_CURRICULUM.find(s => s.id === work.curriculumId);
+            if (!study) return false;
+
+            // Text Search
             const searchLower = searchTerm.toLowerCase();
             const matchesSearch = 
                 work.customTitle.toLowerCase().includes(searchLower) ||
                 work.author.toLowerCase().includes(searchLower) ||
-                study?.study.toLowerCase().includes(searchLower);
+                study.study.toLowerCase().includes(searchLower);
             
+            // Favorites
             const matchesFavorites = !showFavorites || work.isFavorite;
 
-            return matchesSearch && matchesFavorites;
+            // Advanced Filters
+            const matchesGraduation = selectedGraduations.length === 0 || selectedGraduations.includes(study.graduation);
+            const matchesSubGroup = selectedSubGroups.length === 0 || selectedSubGroups.includes(study.subGroup);
+            const matchesStudy = selectedStudyIds.length === 0 || selectedStudyIds.includes(study.id);
+            const matchesVariety = selectedVarieties.length === 0 || selectedVarieties.includes(work.variety);
+
+            return matchesSearch && matchesFavorites && matchesGraduation && matchesSubGroup && matchesStudy && matchesVariety;
         }).sort((a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime());
-    }, [works, searchTerm, showFavorites]);
+    }, [works, searchTerm, showFavorites, selectedGraduations, selectedSubGroups, selectedStudyIds, selectedVarieties]);
 
     const toggleFavorite = (work: CatalogedWork) => {
         onUpdateWork({ ...work, isFavorite: !work.isFavorite });
+    };
+
+    const toggleSelection = <T,>(item: T, list: T[], setList: React.Dispatch<React.SetStateAction<T[]>>) => {
+        if (list.includes(item)) {
+            setList(list.filter(i => i !== item));
+        } else {
+            setList([...list, item]);
+        }
     };
 
     const generateShareableImage = async (work: CatalogedWork) => {
@@ -169,10 +234,17 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
     };
 
     return (
-        <div className="p-4 md:p-6 pb-28">
+        <div className="p-4 md:p-6 pb-28 relative">
             {/* Header */}
             <div className="flex flex-col gap-4 mb-6 sticky top-0 bg-background-light dark:bg-background-dark z-10 py-2">
-                <h1 className="text-2xl font-serif font-bold text-text-light dark:text-text-dark pl-2">Galeria</h1>
+                <div className="flex justify-between items-center pl-2">
+                    <h1 className="text-2xl font-serif font-bold text-text-light dark:text-text-dark">Galeria</h1>
+                    {activeFiltersCount > 0 && (
+                        <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded-lg">
+                            {activeFiltersCount} filtros ativos
+                        </span>
+                    )}
+                </div>
                 
                 <div className="flex gap-3">
                     <div className="flex-1 bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center px-4 py-2.5">
@@ -186,8 +258,16 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
                         />
                     </div>
                      <button 
+                        onClick={() => setIsFilterOpen(true)}
+                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm border ${activeFiltersCount > 0 ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border-gray-200 dark:border-gray-800'}`}
+                        title="Filtrar"
+                    >
+                        <span className="material-symbols-outlined">tune</span>
+                    </button>
+                     <button 
                         onClick={() => setShowFavorites(!showFavorites)} 
-                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm ${showFavorites ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-400/30' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border border-gray-200 dark:border-gray-800'}`}
+                        className={`px-4 rounded-xl flex items-center gap-2 transition-all font-semibold text-sm ${showFavorites ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-400/30 border border-yellow-400' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border border-gray-200 dark:border-gray-800'}`}
+                        title="Favoritos"
                     >
                         <span className={`material-symbols-outlined ${showFavorites ? 'filled' : ''}`}>star</span>
                     </button>
@@ -215,9 +295,152 @@ const Gallery: React.FC<GalleryProps> = ({ works, onUpdateWork, onDeleteWork }) 
             {filteredWorks.length === 0 && (
                  <div className="flex flex-col items-center justify-center py-20 text-center">
                     <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                        <span className="material-symbols-outlined text-3xl text-gray-400">photo_library</span>
+                        <span className="material-symbols-outlined text-3xl text-gray-400">filter_list_off</span>
                     </div>
                     <p className="text-text-secondary-light dark:text-text-secondary-dark font-medium">Nenhum estudo encontrado.</p>
+                    {(activeFiltersCount > 0 || searchTerm || showFavorites) && (
+                        <button 
+                            onClick={() => {
+                                clearFilters();
+                                setSearchTerm('');
+                                setShowFavorites(false);
+                            }}
+                            className="mt-2 text-primary text-sm font-bold hover:underline"
+                        >
+                            Limpar filtros
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Filter Modal */}
+            {isFilterOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+                    <div className="w-full max-w-sm h-full bg-surface-light dark:bg-surface-dark shadow-2xl animate-slideLeft flex flex-col">
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md">
+                            <h2 className="text-lg font-serif font-bold text-text-light dark:text-text-dark">Filtros</h2>
+                            <button onClick={() => setIsFilterOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                            {/* Graduation Filter */}
+                            {availableOptions.graduations.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-3">Graduação</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {availableOptions.graduations.map(grad => (
+                                            <button
+                                                key={grad}
+                                                onClick={() => toggleSelection(grad, selectedGraduations, setSelectedGraduations)}
+                                                className={`px-3 py-1.5 rounded-lg text-sm border transition-all ${
+                                                    selectedGraduations.includes(grad)
+                                                        ? 'bg-primary text-white border-primary shadow-sm'
+                                                        : 'bg-transparent text-text-light dark:text-text-dark border-gray-200 dark:border-gray-700 hover:border-gray-400'
+                                                }`}
+                                            >
+                                                {grad}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Variety Filter */}
+                            {availableOptions.varieties.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-3">Variedade</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {availableOptions.varieties.map(variety => (
+                                            <button
+                                                key={variety}
+                                                onClick={() => toggleSelection(variety, selectedVarieties, setSelectedVarieties)}
+                                                className={`px-3 py-1.5 rounded-lg text-sm border transition-all ${
+                                                    selectedVarieties.includes(variety)
+                                                        ? 'bg-primary text-white border-primary shadow-sm'
+                                                        : 'bg-transparent text-text-light dark:text-text-dark border-gray-200 dark:border-gray-700 hover:border-gray-400'
+                                                }`}
+                                            >
+                                                {variety}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                             {/* SubGroup Filter */}
+                             {availableOptions.subGroups.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-3">Subgrupo</h3>
+                                    <div className="flex flex-col gap-2">
+                                        {availableOptions.subGroups.map(sg => (
+                                            <label key={sg} className="flex items-center gap-3 cursor-pointer group">
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                                                    selectedSubGroups.includes(sg)
+                                                    ? 'bg-primary border-primary'
+                                                    : 'border-gray-300 dark:border-gray-600 group-hover:border-primary'
+                                                }`}>
+                                                    {selectedSubGroups.includes(sg) && <span className="material-symbols-outlined text-white text-xs">check</span>}
+                                                </div>
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="hidden" 
+                                                    checked={selectedSubGroups.includes(sg)}
+                                                    onChange={() => toggleSelection(sg, selectedSubGroups, setSelectedSubGroups)}
+                                                />
+                                                <span className={`text-sm ${selectedSubGroups.includes(sg) ? 'text-primary font-medium' : 'text-text-light dark:text-text-dark'}`}>{sg}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Studies Filter */}
+                            {availableOptions.studies.length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-3">Estudo Específico</h3>
+                                    <div className="max-h-60 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                                        {availableOptions.studies.map(study => (
+                                             <label key={study.id} className="flex items-start gap-3 cursor-pointer group">
+                                                <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                                    selectedStudyIds.includes(study.id)
+                                                    ? 'bg-primary border-primary'
+                                                    : 'border-gray-300 dark:border-gray-600 group-hover:border-primary'
+                                                }`}>
+                                                    {selectedStudyIds.includes(study.id) && <span className="material-symbols-outlined text-white text-[10px]">check</span>}
+                                                </div>
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="hidden" 
+                                                    checked={selectedStudyIds.includes(study.id)}
+                                                    onChange={() => toggleSelection(study.id, selectedStudyIds, setSelectedStudyIds)}
+                                                />
+                                                <span className={`text-sm leading-tight ${selectedStudyIds.includes(study.id) ? 'text-primary font-medium' : 'text-text-light dark:text-text-dark'}`}>
+                                                    {study.name}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-surface-light dark:bg-surface-dark flex gap-3">
+                             <button 
+                                onClick={clearFilters}
+                                className="flex-1 py-3 rounded-xl text-sm font-bold text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                Limpar
+                            </button>
+                            <button 
+                                onClick={() => setIsFilterOpen(false)}
+                                className="flex-1 py-3 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow-lg shadow-primary/20"
+                            >
+                                Ver Resultados
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

@@ -109,18 +109,22 @@ export const generateIkebanaBooklet = async (works: CatalogedWork[]) => {
   const worksToPrint: { studyId: number; work: CatalogedWork }[] = [];
 
   IKEBANA_CURRICULUM.forEach(study => {
-    const matchingWorks = works.filter(w => w.curriculumId === study.id);
+    // Filtrar apenas trabalhos marcados como favoritos para este estudo
+    const matchingWorks = works.filter(w => w.curriculumId === study.id && w.isFavorite);
+    
     if (matchingWorks.length > 0) {
+      // Ordenar por data (mais recente primeiro) já que todos são favoritos
       matchingWorks.sort((a, b) => {
-        if (a.isFavorite && !b.isFavorite) return -1;
-        if (!a.isFavorite && b.isFavorite) return 1;
         return new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime();
       });
       worksToPrint.push({ studyId: study.id, work: matchingWorks[0] });
     }
   });
 
-  if (worksToPrint.length === 0) return;
+  if (worksToPrint.length === 0) {
+      alert("Nenhum estudo favorito encontrado. Marque seus melhores estudos com uma estrela para gerar o portfólio.");
+      return;
+  }
 
   for (const item of worksToPrint) {
     const work = item.work;

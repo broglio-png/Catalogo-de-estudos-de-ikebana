@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CatalogedWork } from '../types';
 import { GRADUATIONS, IKEBANA_CURRICULUM } from '../constants';
 import { XMarkIcon } from './Icons';
@@ -22,6 +22,16 @@ const AddStudyModal: React.FC<AddStudyModalProps> = ({ onClose, onSave }) => {
   const [author, setAuthor] = useState('');
   const [variety, setVariety] = useState<'Moribana' | 'Nageire' | 'N/A'>('N/A');
   const [error, setError] = useState<string | null>(null);
+
+  // Effect to automatically suggest variety when a study is selected
+  useEffect(() => {
+    if (selectedStudyId) {
+      const study = IKEBANA_CURRICULUM.find(s => s.id === selectedStudyId);
+      if (study) {
+        setVariety(study.varietySuggestion);
+      }
+    }
+  }, [selectedStudyId]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
