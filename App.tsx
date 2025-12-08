@@ -6,7 +6,9 @@ import Gallery from './components/Gallery';
 import AddStudyModal from './components/AddStudyModal';
 import Dashboard from './components/Dashboard';
 import StudyCatalogView from './components/StudyCatalogView';
+import BackupModal from './components/BackupModal';
 import { generateIkebanaBooklet } from './utils/pdfGenerator';
+import { checkBackupReminder } from './utils/backupSystem';
 
 const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('gallery');
@@ -14,6 +16,10 @@ const App: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     
+    // Backup State
+    const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+    const [backupNotification, setBackupNotification] = useState<string | null>(null);
+
     // PWA Install Prompt State
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -47,6 +53,14 @@ const App: React.FC = () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         };
     }, []);
+
+    // Check Backup Reminder on Mount
+    useEffect(() => {
+        const reminder = checkBackupReminder(works.length);
+        if (reminder) {
+            setBackupNotification(reminder);
+        }
+    }, [works.length]);
 
     const handleInstallClick = async () => {
         if (!deferredPrompt) return;
@@ -121,11 +135,26 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark flex flex-col font-sans transition-colors duration-300">
-            {/* Header (apenas para ações globais, títulos ficam nas views) */}
+            {/* Notification Banner */}
+            {backupNotification && (
+                <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex justify-between items-center text-xs sm:text-sm text-primary font-medium animate-slideDown">
+                    <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-lg">cloud_sync</span>
+                        <span>{backupNotification}</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={() => setIsBackupModalOpen(true)} className="underline hover:text-primary-dark">Fazer agora</button>
+                        <button onClick={() => setBackupNotification(null)} className="opacity-60 hover:opacity-100">
+                             <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Header */}
             <header className="sticky top-0 z-20 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                         {/* Logo ou Nome do App Simples */}
                         <span className="font-serif font-bold text-xl tracking-tight text-primary dark:text-white">Ikebana Studio</span>
                     </div>
                     
@@ -139,6 +168,15 @@ const App: React.FC = () => {
                                 <span className="material-symbols-outlined">download</span>
                             </button>
                         )}
+                        
+                        {/* Botão de Dados/Backup */}
+                        <button
+                            onClick={() => setIsBackupModalOpen(true)}
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-surface-dark transition-colors"
+                            title="Backup e Dados"
+                        >
+                            <span className="material-symbols-outlined">database</span>
+                        </button>
 
                         <button 
                             onClick={toggleTheme}
@@ -167,6 +205,7 @@ const App: React.FC = () => {
             </main>
 
             {isModalOpen && <AddStudyModal onClose={() => setIsModalOpen(false)} onSave={handleSaveWork} />}
+            {isBackupModalOpen && <BackupModal onClose={() => setIsBackupModalOpen(false)} works={works} />}
             
             {/* FAB (Floating Action Button) */}
             <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30">
