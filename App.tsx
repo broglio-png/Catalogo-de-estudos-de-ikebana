@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { CatalogedWork, Tab } from './types';
@@ -13,6 +14,9 @@ const App: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     
+    // PWA Install Prompt State
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
     // Theme State
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
 
@@ -29,6 +33,32 @@ const App: React.FC = () => {
             if (metaThemeColor) metaThemeColor.setAttribute('content', '#f7f6f8'); // background-light
         }
     }, [theme]);
+
+    // PWA Install Effect
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        
+        deferredPrompt.prompt();
+        
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+        }
+    };
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -99,7 +129,17 @@ const App: React.FC = () => {
                         <span className="font-serif font-bold text-xl tracking-tight text-primary dark:text-white">Ikebana Studio</span>
                     </div>
                     
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {deferredPrompt && (
+                            <button
+                                onClick={handleInstallClick}
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-surface-dark transition-colors animate-pulse"
+                                title="Instalar Aplicativo"
+                            >
+                                <span className="material-symbols-outlined">download</span>
+                            </button>
+                        )}
+
                         <button 
                             onClick={toggleTheme}
                             className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-100 dark:hover:bg-surface-dark transition-colors"
@@ -113,7 +153,7 @@ const App: React.FC = () => {
                         <button 
                             onClick={handleGenerateBooklet} 
                             disabled={isGeneratingPdf}
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary rounded-full hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
+                            className="flex items-center gap-2 px-3 py-2 sm:px-4 text-sm font-bold text-white bg-primary rounded-full hover:bg-primary-dark transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
                         >
                             <span className="material-symbols-outlined text-lg">auto_stories</span>
                             <span className="hidden sm:inline">{isGeneratingPdf ? 'Gerando...' : 'Meu Livrinho'}</span>

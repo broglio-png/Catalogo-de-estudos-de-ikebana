@@ -1,9 +1,20 @@
-const CACHE_NAME = 'ikebana-studio-v1';
+
+const CACHE_NAME = 'ikebana-studio-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/index.tsx',
-  '/manifest.json'
+  '/manifest.json',
+  '/types.ts',
+  '/constants.ts',
+  '/hooks/useLocalStorage.ts',
+  '/components/Gallery.tsx',
+  '/components/Icons.tsx',
+  '/components/Dashboard.tsx',
+  '/components/StudyCatalogView.tsx',
+  '/components/AddStudyModal.tsx',
+  '/utils/pdfGenerator.ts',
+  '/utils/mockData.ts'
 ];
 
 // Instalação do Service Worker

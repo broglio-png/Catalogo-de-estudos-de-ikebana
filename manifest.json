@@ -1,7 +1,11 @@
+
 {
   "name": "Ikebana Studio",
   "short_name": "Ikebana",
+  "description": "Catálogo digital e portfólio para estudantes de Ikebana.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#19141e",
   "theme_color": "#5d2c90",
